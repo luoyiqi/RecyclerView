@@ -19,12 +19,14 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
 
 import com.wx.recyclerview.FastRecyclerView;
 import com.wx.recyclerview.ListItemDecoration;
+import com.wx.recyclerview.RecyclerViewAdapter;
 
 import java.util.ArrayList;
 
@@ -61,6 +63,20 @@ public class MainActivity extends AppCompatActivity {
         ((TextView) v3.findViewById(R.id.header_text)).setText("3333");
         ((TextView) v4.findViewById(R.id.header_text)).setText("4444");
         adapter.setHeaderView(v1);
+        adapter.setFooterView(v2);
+        adapter.setOnItemClickListener(new RecyclerViewAdapter.OnItemClickListener<String>() {
+            @Override
+            public void onItemClick(View v, int position, String data) {
+                log("click  p:" + position + ", data:" + data);
+            }
+        });
+        adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener<String>() {
+            @Override
+            public boolean onItemLongClick(View v, int position, String data) {
+                log("long click  p:" + position + ", data:" + data);
+                return false;
+            }
+        });
     }
 
     private static ArrayList<String> getDatas() {
@@ -89,6 +105,10 @@ public class MainActivity extends AppCompatActivity {
     public void del2(View view) {
         adapter.removeFooterView();
 //        adapter.addDatas(getDatas());
+    }
+
+    public void log(String msg) {
+        Log.d("venshine", msg);
     }
 
 }
