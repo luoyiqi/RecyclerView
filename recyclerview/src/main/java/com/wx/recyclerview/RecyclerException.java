@@ -15,26 +15,24 @@
  */
 package com.wx.recyclerview;
 
-import android.content.Context;
-import android.support.annotation.Nullable;
-import android.support.v7.widget.RecyclerView;
-import android.util.AttributeSet;
-
 /**
  * @author venshine
  */
-public class FastRecyclerView extends RecyclerView {
+public class RecyclerException extends RuntimeException {
 
-    public FastRecyclerView(Context context) {
-        super(context);
+    public RecyclerException() {
+        super();
     }
 
-    public FastRecyclerView(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
+    public RecyclerException(String detailMessage) {
+        super(detailMessage);
     }
 
-    public FastRecyclerView(Context context, @Nullable AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
+    public RecyclerException(String detailMessage, Throwable throwable) {
+        super(detailMessage, throwable);
     }
 
+    public RecyclerException(Throwable throwable) {
+        super(throwable);
+    }
 }

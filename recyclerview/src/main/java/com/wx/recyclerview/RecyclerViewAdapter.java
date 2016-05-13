@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2016 venshine.cn@gmail.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.wx.recyclerview;
 
 import android.support.v7.widget.RecyclerView;
@@ -7,6 +22,9 @@ import android.view.ViewGroup;
 
 import java.util.ArrayList;
 
+/**
+ * @author venshine
+ */
 public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
 
     public static final int TYPE_NORMAL = 0;
@@ -15,21 +33,67 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
 
     private ArrayList<T> mDatas = new ArrayList<>();
 
-    private ArrayList<View> mHeaderViews = new ArrayList<>();
+    private View mHeaderView = null;
+    private View mFooterView = null;
 
-    private ArrayList<View> mFooterViews = new ArrayList<>();
-
-    public void addHeaderView(View v) {
-        mHeaderViews.add(v);
-        notifyItemInserted(getHeaderViewsCount());
+    /**
+     * 添加HeaderView
+     *
+     * @param v
+     */
+    public void setHeaderView(View v) {
+        if (mHeaderView == null) {
+            mHeaderView = v;
+            notifyItemInserted(0);
+        }
     }
 
-    public boolean removeHeaderView(View v) {
-        return getHeaderViewsCount() > 0 ? mHeaderViews.remove(v) : false;
+    /**
+     * 移除HeaderView
+     *
+     * @return
+     */
+    public boolean removeHeaderView() {
+        if (mHeaderView != null) {
+            notifyItemRemoved(0);
+            mHeaderView = null;
+            return true;
+        }
+        return false;
     }
 
-    public int getHeaderViewsCount() {
-        return mHeaderViews.size();
+    /**
+     * 添加FooterView
+     *
+     * @param v
+     */
+    public void setFooterView(View v) {
+        if (mFooterView == null) {
+            mFooterView = v;
+            notifyItemInserted(mDatas.size() + getHeaderCount());
+        }
+    }
+
+    /**
+     * 移除FooterView
+     *
+     * @return
+     */
+    public boolean removeFooterView() {
+        if (mFooterView != null) {
+            notifyItemRemoved(mDatas.size() + getHeaderCount());
+            mFooterView = null;
+            return true;
+        }
+        return false;
+    }
+
+    private int getHeaderCount() {
+        return mHeaderView != null ? 1 : 0;
+    }
+
+    private int getFooterCount() {
+        return mFooterView != null ? 1 : 0;
     }
 
     /**
@@ -95,36 +159,38 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
 
     @Override
     public int getItemViewType(int position) {
-        log("count:" + getHeaderViewsCount() + ", pos:" + position);
-        if (getHeaderViewsCount() > 0 && position < getHeaderViewsCount()) {
+        if (mHeaderView != null && position == 0) {
             return TYPE_HEADER;
-        } else {
-            return TYPE_NORMAL;
         }
+        if (mFooterView != null && position == getHeaderCount() + mDatas.size()) {
+            return TYPE_FOOTER;
+        }
+        return TYPE_NORMAL;
     }
 
     @Override
     public RecyclerViewAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        log("onCreateViewHolder:" + viewType);
-        if (getHeaderViewsCount() > 0 && viewType == TYPE_HEADER) {
-            return new ViewHolder(mHeaderViews.get(0));
+        if (mHeaderView != null && viewType == TYPE_HEADER) {
+            return new ViewHolder(mHeaderView);
+        }
+        if (mFooterView != null && viewType == TYPE_FOOTER) {
+            return new ViewHolder(mFooterView);
         }
         return onCreate(parent, viewType);
     }
 
     @Override
     public void onBindViewHolder(RecyclerViewAdapter.ViewHolder holder, int position) {
-//        log("onBindViewHolder:" + position);
-        if (getItemViewType(position) == TYPE_HEADER) {
+        if (getItemViewType(position) == TYPE_HEADER || getItemViewType(position) == TYPE_FOOTER) {
             return;
         }
-        onBind(holder, position, mDatas.get(position));
+        int realPos = position - getHeaderCount();
+        onBind(holder, realPos, mDatas.get(realPos));
     }
 
     @Override
     public int getItemCount() {
-//        log("getItemCount:" + mDatas.size());
-        return getHeaderViewsCount() > 0 ? getHeaderViewsCount() + mDatas.size() : mDatas.size();
+        return getHeaderCount() + getFooterCount() + mDatas.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
