@@ -15,6 +15,10 @@
  */
 package com.wx.recyclerview;
 
+import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -36,8 +40,14 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
     private View mHeaderView = null;
     private View mFooterView = null;
 
+    private Context mContext = null;
+
     private OnItemClickListener mOnItemClickListener = null;
     private OnItemLongClickListener mOnItemLongClickListener = null;
+
+    public RecyclerViewAdapter(Context context) {
+        mContext = context;
+    }
 
     public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
         mOnItemClickListener = onItemClickListener;
@@ -81,7 +91,7 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
     public void setFooterView(View v) {
         if (mFooterView == null) {
             mFooterView = v;
-            notifyItemInserted(mDatas.size() + getHeaderCount());
+            notifyItemInserted(getContentCount() + getHeaderCount());
         }
     }
 
@@ -92,18 +102,18 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
      */
     public boolean removeFooterView() {
         if (mFooterView != null) {
-            notifyItemRemoved(mDatas.size() + getHeaderCount());
+            notifyItemRemoved(getContentCount() + getHeaderCount());
             mFooterView = null;
             return true;
         }
         return false;
     }
 
-    private int getHeaderCount() {
+    private final int getHeaderCount() {
         return mHeaderView != null ? 1 : 0;
     }
 
-    private int getFooterCount() {
+    private final int getFooterCount() {
         return mFooterView != null ? 1 : 0;
     }
 
@@ -144,7 +154,7 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
      * @param data
      */
     public void addData(T data) {
-        addData(mDatas.size(), data);
+        addData(getContentCount(), data);
     }
 
     /**
@@ -169,11 +179,16 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
     }
 
     @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
     public int getItemViewType(int position) {
         if (mHeaderView != null && position == 0) {
             return TYPE_HEADER;
         }
-        if (mFooterView != null && position == getHeaderCount() + mDatas.size()) {
+        if (mFooterView != null && position == getHeaderCount() + getContentCount()) {
             return TYPE_FOOTER;
         }
         return TYPE_NORMAL;
@@ -191,20 +206,42 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
     }
 
     @Override
-    public void onBindViewHolder(final RecyclerViewAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(RecyclerViewAdapter.ViewHolder holder, int position) {
         if (getItemViewType(position) == TYPE_HEADER || getItemViewType(position) == TYPE_FOOTER) {
             return;
         }
-        final int realPos = position - getHeaderCount();
-        final T data = mDatas.get(realPos);
+        int realPos = position - getHeaderCount();
+        T data = mDatas.get(realPos);
+        setEventListener(holder, realPos, data);
         onBind(holder, realPos, data);
-        holder.itemView.setClickable(true);
-        holder.itemView.setLongClickable(true);
+    }
+
+    public Drawable getSelectorDrawable() {
+        return null;
+    }
+
+    /**
+     * 设置事件监听
+     *
+     * @param holder
+     * @param realPos
+     * @param data
+     */
+    private void setEventListener(final ViewHolder holder, final int realPos, final T data) {
+        Drawable selectorDrawable = getSelectorDrawable();
+        if (selectorDrawable == null) {
+            selectorDrawable = RecyclerUtil.getSelectorDrawable();
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            holder.itemView.setBackground(selectorDrawable);
+        } else {
+            holder.itemView.setBackgroundDrawable(selectorDrawable);
+        }
         if (mOnItemClickListener != null) {
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mOnItemClickListener.onItemClick(holder.itemView, position, data);
+                    mOnItemClickListener.onItemClick(holder.itemView, realPos, data);
                 }
             });
         }
@@ -212,27 +249,60 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
             holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    mOnItemLongClickListener.onItemLongClick(holder.itemView, position, data);
+                    mOnItemLongClickListener.onItemLongClick(holder.itemView, realPos, data);
                     return true;
                 }
             });
         }
     }
 
-    @Override
-    public int getItemCount() {
-        return getHeaderCount() + getFooterCount() + mDatas.size();
+    public boolean isHeader(int position) {
+        return mHeaderView != null ? (position == 0) : false;
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
-        public ViewHolder(View itemView) {
-            super(itemView);
+    public boolean isFooter(int position) {
+        return mFooterView != null ? (position == getContentCount() + getHeaderCount()) : false;
+    }
+
+
+    /**
+     * 数据项总数
+     *
+     * @return
+     */
+    public final int getContentCount() {
+        return mDatas.size();
+    }
+
+    @Override
+    public int getItemCount() {
+        return getHeaderCount() + getFooterCount() + getContentCount();
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        log("onAttached");
+        RecyclerView.LayoutManager manager = recyclerView.getLayoutManager();
+        if (manager instanceof GridLayoutManager) {
+            final GridLayoutManager gridManager = ((GridLayoutManager) manager);
+            gridManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                @Override
+                public int getSpanSize(int position) {
+                    return getItemViewType(position) == TYPE_HEADER
+                            ? gridManager.getSpanCount() : 1;
+                }
+            });
         }
     }
 
     public abstract RecyclerViewAdapter.ViewHolder onCreate(ViewGroup parent, int viewType);
 
     public abstract void onBind(RecyclerViewAdapter.ViewHolder holder, int position, T data);
+
+    public void log(String msg) {
+        Log.d("venshine", msg);
+    }
 
     public interface OnItemClickListener<T> {
         void onItemClick(View v, int position, T data);
@@ -242,8 +312,12 @@ public abstract class RecyclerViewAdapter<T> extends RecyclerView.Adapter<Recycl
         void onItemLongClick(View v, int position, T data);
     }
 
-    public void log(String msg) {
-        Log.d("venshine", msg);
+    public class ViewHolder extends RecyclerView.ViewHolder {
+        public ViewHolder(View itemView) {
+            super(itemView);
+            itemView.setClickable(true);
+            itemView.setLongClickable(true);
+        }
     }
 
 }

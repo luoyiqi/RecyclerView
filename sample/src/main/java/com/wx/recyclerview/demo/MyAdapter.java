@@ -15,17 +15,24 @@
  */
 package com.wx.recyclerview.demo;
 
+import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.wx.recyclerview.RecyclerUtil;
 import com.wx.recyclerview.RecyclerViewAdapter;
 
 /**
  * @author venshine
  */
 public class MyAdapter extends RecyclerViewAdapter<String> {
+
+    public MyAdapter(Context context) {
+        super(context);
+    }
 
     @Override
     public RecyclerViewAdapter.ViewHolder onCreate(ViewGroup parent, int viewType) {
@@ -38,6 +45,11 @@ public class MyAdapter extends RecyclerViewAdapter<String> {
         if (holder instanceof MyHolder) {
             ((MyHolder) holder).textView.setText(data);
         }
+    }
+
+    @Override
+    public Drawable getSelectorDrawable() {
+        return RecyclerUtil.getSelectorDrawable();
     }
 
     class MyHolder extends RecyclerViewAdapter.ViewHolder {

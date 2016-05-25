@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,10 +38,18 @@ import java.util.ArrayList;
  */
 public class MainActivity extends AppCompatActivity {
 
+    private MyAdapter adapter;
     private FastRecyclerView mRecyclerView;
-    MyAdapter adapter;
-
+    private RecyclerView.ItemDecoration mItemDecoration;
     private View v1, v2, v3, v4;
+
+    private static ArrayList<String> getDatas() {
+        ArrayList<String> list = new ArrayList<String>();
+        for (int i = 0; i < 20; i++) {
+            list.add(i + "");
+        }
+        return list;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +57,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mRecyclerView = (FastRecyclerView) findViewById(R.id.recyclerview);
-        adapter = new MyAdapter();
+        adapter = new MyAdapter(this);
         mRecyclerView.setAdapter(adapter);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        mRecyclerView.addItemDecoration(new ListItemDecoration(this, ListItemDecoration.VERTICAL));
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mItemDecoration = new ListItemDecoration(this, ListItemDecoration.VERTICAL);
+        mRecyclerView.addItemDecoration(mItemDecoration);
         adapter.addDatas(getDatas());
         v1 = LayoutInflater.from(this).inflate(R.layout.header, mRecyclerView, false);
         v2 = LayoutInflater.from(this).inflate(R.layout.header, mRecyclerView, false);
@@ -72,39 +82,50 @@ public class MainActivity extends AppCompatActivity {
         });
         adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener<String>() {
             @Override
-            public boolean onItemLongClick(View v, int position, String data) {
+            public void onItemLongClick(View v, int position, String data) {
                 log("long click  p:" + position + ", data:" + data);
-                return false;
             }
         });
     }
 
-    private static ArrayList<String> getDatas() {
-        ArrayList<String> list = new ArrayList<String>();
-        for (int i = 0; i < 20; i++) {
-            list.add(i + "");
-        }
-        return list;
-    }
-
     public void add(View view) {
-//        adapter.addDatas(getDatas());
-        adapter.setHeaderView(v1);
+        adapter.addDatas(getDatas());
     }
 
     public void del(View view) {
         adapter.removeHeaderView();
-//        adapter.addDatas(getDatas());
     }
 
     public void add2(View view) {
         adapter.setFooterView(v2);
-//        adapter.addDatas(getDatas());
     }
 
     public void del2(View view) {
         adapter.removeFooterView();
-//        adapter.addDatas(getDatas());
+    }
+
+    public void listV(View v) {
+        mRecyclerView.setListMode(FastRecyclerView.VERTICAL, true);
+    }
+
+    public void listH(View v) {
+        mRecyclerView.setListMode(FastRecyclerView.HORIZONTAL, true);
+    }
+
+    public void gridV(View v) {
+        mRecyclerView.setGridMode(FastRecyclerView.VERTICAL, 4, true);
+    }
+
+    public void gridH(View v) {
+        mRecyclerView.setGridMode(FastRecyclerView.HORIZONTAL, 4, true);
+    }
+
+    public void staggerV(View v) {
+        mRecyclerView.setStaggeredMode(FastRecyclerView.VERTICAL, 4, true);
+    }
+
+    public void staggerH(View v) {
+        mRecyclerView.setStaggeredMode(FastRecyclerView.HORIZONTAL, 4, true);
     }
 
     public void log(String msg) {
